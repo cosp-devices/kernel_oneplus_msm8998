@@ -1141,6 +1141,8 @@ struct eas_stats {
 
 struct sched_domain_shared {
 	atomic_t	ref;
+
+	bool            overutilized;
 };
 
 struct sched_domain {
