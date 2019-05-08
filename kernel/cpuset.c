@@ -1768,6 +1768,43 @@ out_unlock:
 	return retval ?: nbytes;
 }
 
+static ssize_t custom_cpuset_write_resmask(struct kernfs_open_file *of,
+				    char *buf, size_t nbytes, loff_t off)
+{
+	int i;
+
+	/* Location: /dev/cpuset/<cpuset_group>/cpus */
+	static const char *cpuset_group[] = {
+		"audio-app", 
+		"background", 
+		"camera-daemon", 
+		"foreground", 
+		"restricted", 
+		"system", 
+		"system-background", 
+		"top-app" 
+	};
+
+	static char *cpuset_cpus[][20] = {
+		"0-3", 
+		"0-1", 
+		"0-7", 
+		"0-3,6-7",
+		"0-3", 
+		"0-1,6-7", 
+		"0-3", 
+		"0-7"
+	};
+
+	/* Set the assigned cpuset_cpus to the corresponding cpuset_group */
+	for (i = 0; i < ARRAY_SIZE(cpuset_group); i++) 
+		if (!strcmp(of->kn->parent->name, cpuset_group[i]))
+			return cpuset_write_resmask(of,
+				cpuset_cpus[i], nbytes, off);
+
+	return cpuset_write_resmask(of, buf, nbytes, off);
+}
+
 /*
  * These ascii lists should be read in a single call, by using a user
  * buffer large enough to hold the entire map.  If read in smaller
@@ -1860,7 +1897,7 @@ static struct cftype files[] = {
 	{
 		.name = "cpus",
 		.seq_show = cpuset_common_seq_show,
-		.write = cpuset_write_resmask,
+		.write = custom_cpuset_write_resmask,
 		.max_write_len = (100U + 6 * NR_CPUS),
 		.private = FILE_CPULIST,
 	},
